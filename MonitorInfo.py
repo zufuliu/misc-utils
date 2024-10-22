@@ -93,10 +93,10 @@ def DecodeStandardTiming(aspectList, horizontal, aspect):
 
 def DumpEDID(edid):
 	if len(edid) < 128 or edid[0:8] != b'\x00\xFF\xFF\xFF\xFF\xFF\xFF\x00':
-		print(f'{indent}invalid EDID')
+		print(f'{indent}Invalid EDID')
 		return
 	if sum(edid[0:128]) & 0xFF != 0x00:
-		print(f'{indent}invalid Checksum')
+		print(f'{indent}Invalid Checksum')
 
 	# Vendor & Product ID
 	value = (edid[8] << 8) | edid[9]
@@ -384,6 +384,29 @@ def DumpEDID(edid):
 
 	flag = edid[0x7E]
 	print(f'{indent}Extension Flag: {flag:02X} {len(edid)}\n')
+	if flag == 0 or len(edid) < 256:
+		return
+	for offset in range(128, len(edid), 128):
+		data = edid[offset:offset+128]
+		tag = data[0]
+		if sum(data) & 0xFF != 0:
+			print('Invalid Extension Checksum')
+		if tag == 0x02:
+			print('CEA 861 Extension:')
+		elif tag == 0x10:
+			print('Video Timing Block Extension:')
+		elif tag == 0x40:
+			print('Display Information Extension:')
+		elif tag == 0x50:
+			print('Localized String Extension:')
+		elif tag == 0x60:
+			print('Digital Packet Video Link Extension:')
+		elif tag == 0xF0:
+			print('Extension Block Map:')
+		elif tag == 0xFF:
+			print('Manufacturer Defined Extension:')
+		else:
+			print(f'Unknown Extension: 0x{tag:02X}')
 
 def DumpAllEDID():
 	parent = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Enum\DISPLAY", access=winreg.KEY_READ)
